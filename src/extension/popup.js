@@ -8,35 +8,46 @@ import css from '../overlay/overlay.css';
 const SITE = g => `https://${g}.certitudes.org/`;
 const DEFAULTS = { flavor: 'github', mode: 'auto', disguise: true };
 const MIN = { w: 340, h: 360 }, MAX = { w: 800, h: 600 };
-const st = { sort: 'temp', menu: null, expanded: false, lastSent: null };
-let opts = DEFAULTS, game = 'cemantix', tabId = null, model = null, status = 'Connecting…';
+const st = { sort: 'temp', menu: null, expanded: false, lastSent: null, copied: false, teamBusy: false };
+let opts = DEFAULTS, game = 'cemantix', tabId = null, model = null, ready = false, status = 'Connecting…';
 let ui = null, lastHtml = {};
 
 // ------------------------------------------------------------------ the game's tab
 const send = msg => chrome.tabs.sendMessage(tabId, { to: 'game', game, ...msg });
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+/** `send` that gives up after `ms` (a tab asleep may never answer). */
+const ask = (msg, ms = 1500) => Promise.race([send(msg).catch(() => null), sleep(ms).then(() => null)]);
 
-/** The game's tab: the most recently used one, or a new background tab. Waits until its content script answers. */
+/** The game's tab: the most recently used one that answers, or a new background tab. A tab opened before the
+ *  extension was (re)loaded or put to sleep by the browser has no live content script: it is reloaded. */
 async function connect(g) {
   game = g; tabId = null; model = null; status = `Opening ${g}…`; render();
   chrome.storage.local.set({ lastGame: g });
-  const tabs = await chrome.tabs.query({ url: `${SITE(g)}*` });
-  const tab = tabs.sort((a, b) => (b.lastAccessed ?? 0) - (a.lastAccessed ?? 0))[0] ?? await chrome.tabs.create({ url: SITE(g), active: false });
+  const tabs = (await chrome.tabs.query({ url: `${SITE(g)}*` })).sort((a, b) => (b.lastAccessed ?? 0) - (a.lastAccessed ?? 0));
+  let tab = null;
+  for (const t of tabs) {
+    if (t.discarded) continue;
+    tabId = t.id;
+    if (await ask({ type: 'state' })) { tab = t; break; }
+  }
+  if (!tab && tabs[0]) { tab = tabs[0]; await chrome.tabs.reload(tab.id); }
+  if (!tab) tab = await chrome.tabs.create({ url: SITE(g), active: false });
+  if (game !== g) return;
   tabId = tab.id;
-  for (let k = 0; k < 60; k++) {
+  for (let k = 0; k < 80; k++) {
     if (game !== g) return;   // switched meanwhile
-    const r = await send({ type: 'state' }).catch(() => null);
-    if (r?.present) { status = r.ready ? null : 'The game is starting…'; model = r.model; render(); if (r.ready) return; }
+    const r = await ask({ type: 'state' });
+    if (r?.present) { status = null; model = r.model; ready = r.ready; render(); if (r.ready) return; }
     await sleep(250);
   }
-  if (!model) { status = `Couldn't reach ${g}. Open the page once, then try again.`; render(); }
+  if (!model) { status = `Couldn't reach ${g}. Reload its page, then try again.`; render(); }
 }
 
 async function refresh() {
   if (!tabId) return;
   const r = await send({ type: 'state' }).catch(() => null);
   if (!r?.present) return;
-  model = r.model; status = r.ready ? null : 'The game is starting…';
+  model = r.model; ready = r.ready; status = null;
   render();
 }
 
@@ -60,6 +71,15 @@ function build() {
   ui.input.focus();
 }
 
+/** The popup around the card takes the page's palette (light / dark, GitHub / GitLab). */
+function frame() {
+  const cs = getComputedStyle(ui.shadow.querySelector('.gx-scroll'));
+  const dark = matchMedia('(prefers-color-scheme: dark)').matches && opts.mode === 'auto' || opts.mode === 'dark';
+  document.body.style.setProperty('--frame', cs.getPropertyValue(dark ? '--bg-inset' : '--bg-muted'));
+  document.body.style.setProperty('--card-border', cs.getPropertyValue('--border'));
+  document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
+}
+
 function put(name, html) {
   if (!ui.regions[name] || lastHtml[name] === html) return;
   lastHtml[name] = html;
@@ -70,12 +90,13 @@ function render() {
   if (!ui || ui.flavor !== opts.flavor) build();
   ui.host.dataset.flavor = opts.flavor;
   ui.host.dataset.mode = opts.mode;
+  frame();
   const i = R.makeIcon(opts.flavor);
   const m = model ?? { game, other: game === 'cemantix' ? 'pedantix' : 'cemantix', kind: game, rows: [], team: {}, error: '' };
   put('header', R.miniHeader(m, st, i, opts.flavor));
   put('menu', R.menu(m, st, i, opts));
   if (status || !model) { put('flash', ''); put('win', ''); put('game', R.miniStatus(status ?? 'Connecting…', i)); return; }
-  put('flash', R.flash(m, st, i));
+  put('flash', ready ? R.flash(m, st, i) : R.miniStatus('The game is starting…', i));
   put('win', R.winBanner(m, i));
   put('game', m.kind === 'pedantix' ? R.pedantixGame(m, i) : R.cemantixGame(m, st, i));
 }
@@ -86,11 +107,21 @@ function wire() {
     e.preventDefault();
     const word = input.value.trim();
     if (!word || !tabId) return;
-    const r = await send({ type: 'guess', word }).catch(() => null);
-    if (!r?.ok) return;   // the game is busy or not ready: keep the word
+    // the game may still be starting (or busy with the previous word): retry for a few seconds
+    let r = null;
+    for (let k = 0; k < 24 && !(r = await send({ type: 'guess', word }).catch(() => null))?.ok; k++) await sleep(250);
+    if (!r?.ok) return;   // keep the word
     st.lastSent = word;
     input.value = '';
     input.focus();
+  });
+  // team (the game's own, driven in its tab): join with a code
+  shadow.addEventListener('submit', e => {
+    const join = e.target.closest?.('[data-gx-join]');
+    if (!join) return;
+    e.preventDefault();
+    const code = join.querySelector('[data-gx-team-input]').value.trim();
+    if (code) teamOp('join', code);
   });
   shadow.addEventListener('change', e => {
     const t = e.target;
@@ -106,17 +137,29 @@ function wire() {
     if (el && box && el.contains(box)) el = null;
     if (!el) return;
     const a = el.dataset.gxAction, v = el.dataset.value;
-    if (a === 'menu') st.menu = st.menu === el.dataset.menu ? null : el.dataset.menu;
+    if (a === 'menu') { st.menu = st.menu === el.dataset.menu ? null : el.dataset.menu; st.copied = false; if (st.menu === 'team') send({ type: 'team', op: 'load' }).then(refresh, () => {}); }
     else if (a === 'menu-close') st.menu = null;
     else if (a === 'switch') { st.menu = null; if (v !== game) { connect(v); return; } }
     else if (a === 'sort') st.sort = v;
     else if (a === 'share') send({ type: 'share' });
+    else if (a === 'team-create') teamOp('create');
+    else if (a === 'team-leave') teamOp('leave');
+    else if (a === 'copy-code') {
+      const code = shadow.querySelector('[data-gx-team-code]')?.value;
+      if (code) navigator.clipboard?.writeText(code).then(() => { st.copied = true; render(); }).catch(() => {});
+    }
     else if (a === 'open-tab') { if (tabId) chrome.tabs.update(tabId, { active: true }).then(t => chrome.windows.update(t.windowId, { focused: true })).then(() => window.close()); return; }
     else return;
     e.preventDefault();
     render();
-    input.focus();
+    if (!st.menu) input.focus();
   });
+}
+
+async function teamOp(op, code) {
+  st.teamBusy = true; render();
+  await send({ type: 'team', op, code }).catch(() => null);
+  setTimeout(() => { st.teamBusy = false; refresh(); }, 1500);
 }
 
 // ------------------------------------------------------------------ size

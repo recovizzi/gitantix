@@ -8,8 +8,10 @@
   @media (prefers-color-scheme: dark) { :root { --muted: #9198a1; } }
   html, body { margin: 0; }
   /* the popup window follows the body size (browsers cap it at 800 × 600) */
-  body { position: relative; width: 420px; height: 560px; overflow: hidden; }
-  .gx-host { position: absolute; inset: 0; }
+  body { position: relative; width: 420px; height: 560px; overflow: hidden; background: var(--frame, #eff2f5); }
+  /* the page as a rounded card floating in the popup (colours set by popup.js from the page's palette) */
+  .gx-host { position: absolute; inset: 8px; border-radius: 12px; overflow: hidden; border: 1px solid var(--card-border, #d1d9e0);
+    box-shadow: 0 1px 2px rgb(0 0 0 / .08), 0 4px 14px rgb(0 0 0 / .12); }
   /* resize grips at the bottom corners (the popup hangs from the toolbar icon) */
   .grip { position: absolute; left: 0; bottom: 0; width: 14px; height: 14px; cursor: nesw-resize; z-index: 2; opacity: .5;
     background: linear-gradient(45deg, transparent 0 45%, var(--muted) 45% 52%, transparent 52% 65%, var(--muted) 65% 72%, transparent 72%); }

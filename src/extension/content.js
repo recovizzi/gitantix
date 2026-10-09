@@ -65,6 +65,11 @@ if (game) {
     else if (msg.type === 'word') reply({ ok: actions.word(msg.i) });
     else if (msg.type === 'toggle') reply({ ok: actions.toggle(msg.id) });
     else if (msg.type === 'share') reply({ ok: actions.share() });
+    else if (msg.type === 'team') {   // load / create / join / leave: the game's own team panel, driven like the page does
+      const op = { load: () => actions.loadTeam(), create: () => actions.createTeam(), join: () => actions.joinTeam(msg.code), leave: () => actions.leaveTeam() }[msg.op];
+      Promise.resolve(op?.()).then(() => reply({ ok: true }), () => reply({ ok: false }));
+      return true;   // answers asynchronously
+    }
   });
   // tell an open popup that the game changed (nobody listens when it's closed: ignore the error)
   let timer = null;

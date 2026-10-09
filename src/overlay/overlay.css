@@ -283,9 +283,16 @@ button { font: inherit; color: inherit; cursor: pointer; }
 
 /* ---------- the popup's mini version ---------- */
 .gx-mini { display: flex; flex-direction: column; height: 100%; }
-.gx-mini-head { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--header-bg); border-bottom: 1px solid var(--border); }
+.gx-mini { container-type: inline-size; }
+.gx-mini-head { display: flex; align-items: center; gap: 4px; padding: 8px 8px 8px 10px; background: var(--header-bg); border-bottom: 1px solid var(--border); }
 .gx-mini-head .gx-logo .gx-icon { width: 24px; height: 24px; }
 .gx-mini-head .gx-icon-btn { height: 28px; min-width: 28px; }
+.gx-mini-head .gx-logo { margin-right: 4px; }
+.gx-mini-head .gx-crumbs { min-width: 0; white-space: nowrap; }
+.gx-mini-head .gx-meta { margin-right: 4px; }
+@container (max-width: 440px) { .gx-mini-head .gx-crumbs > span { display: none; } }   /* "certitudes /": room for the buttons */
+.gx-mini-head .gx-team-on { color: var(--accent); }
+.gx-mini-head .gx-icon-btn .gx-counter { margin-left: 2px; }
 .gx-mini-body { flex: 1; min-height: 0; overflow-y: auto; padding: 0 10px 12px; display: flex; flex-direction: column; gap: 8px; }
 .gx-mini .gx-guess { padding: 10px 0 4px; }
 .gx-mini .gx-flash { padding: 6px 10px; font-size: 13px; }
@@ -297,7 +304,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .gx-mini .gx-markdown h1 { font-size: 1.5em; margin: 4px 0 10px; }
 .gx-mini .gx-merged { padding: 10px; gap: 10px; }
 .gx-mini .gx-merged-icon { width: 28px; height: 28px; }
-.gx-mini .gx-pop { top: 44px; left: 10px; right: 10px; width: auto; }
-.gx-mini .gx-modal-back { padding: 24px 10px; }
+.gx-mini .gx-pop { position: absolute; top: 44px; left: 10px; right: 10px; width: auto; }   /* in the card, not the popup window */
+.gx-mini .gx-modal-back { position: absolute; padding: 24px 10px; }
 .gx-np-empty { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 32px 12px; color: var(--fg-muted); text-align: center; }
 .gx-scroll:has(.gx-mini) { overflow: hidden; }   /* the mini body scrolls, not the whole popup */

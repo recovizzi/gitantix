@@ -56,7 +56,20 @@ for (const [game, word, selector] of [['cemantix', 'chien', '.gx-table tbody tr'
   const box = p.locator('.gx-host [data-gx-input]');
   await box.fill('voiture'); await box.press('Enter'); await p.waitForTimeout(2500);
   check(scores.includes('word=voiture') || scores.some(s => s.includes('"voiture"')), 'mini: the guess is sent through the tab');
-  await p.close();
+  // friends: create a team from the popup (the game's own team, in its tab)
+  await p.locator('.gx-host [data-menu=team]').click();
+  await p.locator('.gx-host [data-gx-action=team-create]').click({ timeout: 8000 });
+  for (let k = 0; k < 30 && !(await mini(s => s.querySelector('[data-gx-team-code]')?.value)); k++) await p.waitForTimeout(500);
+  check(!!(await mini(s => s.querySelector('[data-gx-team-code]')?.value)), 'mini: a team code is created from the popup');
+  // a tab opened before the extension was reloaded has no live content script: the popup reloads it
+  await p.evaluate(() => chrome.runtime.reload()).catch(() => {});
+  await new Promise(r => setTimeout(r, 2000));
+  const q = await ctx.newPage();
+  await q.goto(`chrome-extension://${id}/popup.html`);
+  const mini2 = fn => q.evaluate(`(() => { const s = document.querySelector('.gx-host')?.shadowRoot; return (${fn})(s); })()`);
+  for (let k = 0; k < 40 && !(await mini2(s => !!s?.querySelector('.gx-files, .gx-readme'))); k++) await q.waitForTimeout(500);
+  check(await mini2(s => !!s?.querySelector('.gx-files, .gx-readme')), 'mini: reconnects to a tab opened before the extension was reloaded');
+  await q.close();
 }
 await ctx.close();
 fs.rmSync(profile, { recursive: true, force: true });

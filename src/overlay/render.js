@@ -332,8 +332,8 @@ export function miniHeader(m, st, i, flavor) {
     <nav class="gx-crumbs"><span class="gx-muted">${ORG}</span><span>/</span><button class="gx-repo-switch" data-gx-action="menu" data-menu="switch"><b>${esc(m.game)}</b>${i('triangle-down')}</button></nav>
     <span class="gx-spacer"></span>
     ${m.day ? `<span class="gx-muted gx-meta" title="Day">${i('tag')} ${m.day}</span>` : ''}
-    ${m.team?.in ? `<span class="gx-muted gx-meta" title="Team">${i('people')} ${m.team.members ?? 1}</span>` : ''}
     <button class="gx-icon-btn" data-gx-action="open-tab" title="Open the full page">${i('link-external')}</button>
+    <button class="gx-icon-btn${m.team?.in ? ' gx-team-on' : ''}" data-gx-action="menu" data-menu="team" title="${m.team?.in ? `Team: ${m.team.members ?? 1}` : 'Play with friends'}">${i('people')}${m.team?.in ? `<span class="gx-counter">${m.team.members ?? 1}</span>` : ''}</button>
     <button class="gx-icon-btn" data-gx-action="menu" data-menu="settings" title="Settings">${i('gear')}</button>
   </header>`;
 }

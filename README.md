@@ -8,7 +8,7 @@ sibling project [JetHub](https://github.com/nilscrls/jethub) (JetPunk disguised 
 > (light / dark): guess box, Cémantix file list with emojis, temperatures, ‰ and proximity bars, Pédantix README
 > with holes, recent guesses (5, expandable), game switch, teams (create / share / join / leave), in-page settings,
 > the game's rules / FAQ / history in GitHub modals, win banner. The popup is the **mini version** of the last game
-> opened (resizable), playing through the game's tab (see `specs/mini.md`).
+> opened (resizable, with team play), playing through the game's tab (see `specs/mini.md`).
 
 ## Goals
 
