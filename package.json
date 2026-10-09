@@ -1,0 +1,25 @@
+{
+  "name": "gitantix",
+  "version": "0.1.0",
+  "private": true,
+  "author": "Rémi Covizzi",
+  "license": "MIT",
+  "type": "module",
+  "description": "GitHub/GitLab-style disguise of Cémantix and Pédantix — browser extension",
+  "scripts": {
+    "build": "node tools/build.mjs",
+    "lint": "web-ext lint --self-hosted --source-dir dist/extension",
+    "icons": "node tools/icons.mjs",
+    "sign:firefox": "node --env-file-if-exists=.env tools/sign-firefox.mjs"
+  },
+  "devDependencies": {
+    "@gitlab/svgs": "^3.166.0",
+    "@primer/octicons": "^19.40.0",
+    "crx3": "^2.0.0",
+    "esbuild": "^0.28.2",
+    "fflate": "^0.8.3",
+    "playwright": "1.49.1",
+    "web-ext": "^10.7.0"
+  },
+  "packageManager": "pnpm@12.9.1+sha512.06b055fff5cd20dc12781de173ced3310ce0951bf2ec620211a16045d5444d5c93a663210764ef29a653a610459ba0368f0e74f84d80c54723cf95aae7bc0d6d"
+}

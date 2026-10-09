@@ -1,0 +1,7 @@
+node_modules/
+dist/
+signed/
+web-ext-artifacts/
+shots/
+.env
+*.pem
