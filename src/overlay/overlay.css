@@ -306,5 +306,19 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .gx-mini .gx-merged-icon { width: 28px; height: 28px; }
 .gx-mini .gx-pop { position: absolute; top: 44px; left: 10px; right: 10px; width: auto; }   /* in the card, not the popup window */
 .gx-mini .gx-modal-back { position: absolute; padding: 24px 10px; }
+/* menus and modals cover the whole mini page (its menu region isn't their containing block), backdrop under menus too */
+.gx-mini { position: relative; }
+.gx-mini > [data-gx-region=menu] { position: static; }
+.gx-mini > [data-gx-region=menu]:has(.gx-pop)::before { content: ""; position: absolute; inset: 0; z-index: 29; background: #1f232866; }
+/* Pédantix history: square button, the list on hover / keyboard focus */
+.gx-hist { position: relative; display: flex; }
+.gx-hist-btn { width: 36px; padding: 0; justify-content: center; }
+.gx-hist-pop { display: none; position: absolute; right: 0; top: 100%; z-index: 20; padding-top: 6px; width: 260px; }
+.gx-hist:hover .gx-hist-pop, .gx-hist:focus-within .gx-hist-pop { display: block; }
+.gx-hist-box { max-height: min(320px, 60vh); overflow-y: auto; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow); }
+.gx-hist-box .gx-pop-head { display: flex; align-items: center; gap: 6px; position: sticky; top: 0; background: var(--bg); }
+.gx-hist-box ul { list-style: none; margin: 0; padding: 4px 0; }
+.gx-hist-box .gx-commit { padding: 4px 12px; }
+.gx-hist-box > p { margin: 0; padding: 8px 12px 12px; }
 .gx-np-empty { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 32px 12px; color: var(--fg-muted); text-align: center; }
 .gx-scroll:has(.gx-mini) { overflow: hidden; }   /* the mini body scrolls, not the whole popup */

@@ -91,6 +91,7 @@ function render() {
   put('header', R.miniHeader(m, st, i, opts.flavor, { close: EMBED }));
   put('menu', R.menu(m, st, i, opts));
   if (status || !model) { put('flash', ''); put('win', ''); put('game', R.miniStatus(status ?? 'Connecting…', i)); return; }
+  put('history', model ? R.miniHistory(m, i) : '');
   put('note', note ? `<div class="gx-flash gx-flash-warn">${i('alert')}<span>${note}</span></div>` : '');
   put('flash', ready ? R.flash(m, st, i) : R.miniStatus('The game is starting…', i));
   put('win', R.winBanner(m, i));
@@ -119,6 +120,8 @@ function wire() {
     const code = join.querySelector('[data-gx-team-input]').value.trim();
     if (code) teamOp('join', code);
   });
+  // the history button only shows a list on hover: clicking it must leave the focus in the guess box
+  shadow.addEventListener('mousedown', e => { if (e.target.closest('[data-gx-history]')) e.preventDefault(); });
   shadow.addEventListener('keydown', e => {
     if (e.key !== 'Escape') return;
     if (st.menu) { st.menu = null; render(); input.focus(); } else if (EMBED) close();

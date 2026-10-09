@@ -220,13 +220,16 @@ export function pedantixGame(m, i) {
 }
 
 // ------------------------------------------------------------------ sidebar: About, recent guesses
+/** A guess in the recent lists (sidebar, the mini version's history). */
+const recentLine = (m, r) => m.kind === 'cemantix'
+  ? `<li class="gx-commit gx-h-${r.cls}"><span class="gx-emoji">${r.emoji}</span><span class="gx-word">${esc(r.word)}</span><span class="gx-spacer"></span><span class="gx-num">${temp(r.temp)}°</span></li>`
+  : `<li class="gx-commit"><span class="gx-sq">${r.exact ? '🟩' : r.close ? '🟧' : '🟥'}</span><span class="gx-word">${esc(r.word)}</span><span class="gx-spacer"></span><span class="gx-muted gx-num">${r.exact ? `+${r.exact}` : ''}${r.close ? ` ~${r.close}` : ''}</span></li>`;
+
 export function side(m, st, i) {
   const legend = m.kind === 'cemantix' && m.legend.length ? `<table class="gx-legend">${m.legend.map(l => `<tr><td>${esc(l.emoji)}</td><td class="gx-num">${esc(l.rank)}${l.rank ? '‰' : ''}</td><td class="gx-num gx-muted">${esc(l.temp)} °C</td></tr>`).join('')}</table>` : '';
   const recent = [...m.rows].sort((a, b) => b.order - a.order);
   const shown = st.expanded ? recent : recent.slice(0, RECENT);
-  const line = r => m.kind === 'cemantix'
-    ? `<li class="gx-commit gx-h-${r.cls}"><span class="gx-emoji">${r.emoji}</span><span class="gx-word">${esc(r.word)}</span><span class="gx-spacer"></span><span class="gx-num">${temp(r.temp)}°</span></li>`
-    : `<li class="gx-commit"><span class="gx-sq">${r.exact ? '🟩' : r.close ? '🟧' : '🟥'}</span><span class="gx-word">${esc(r.word)}</span><span class="gx-spacer"></span><span class="gx-muted gx-num">${r.exact ? `+${r.exact}` : ''}${r.close ? ` ~${r.close}` : ''}</span></li>`;
+  const line = r => recentLine(m, r);
   return `<section class="gx-about">
       <h2>About</h2>
       <p>${TITLES[m.game]}. Day <b>nº${m.day ?? '—'}</b>.</p>
@@ -317,6 +320,7 @@ export function miniShell(flavor) {
       <form class="gx-guess" data-gx-form autocomplete="off">
         <label class="gx-guess-field">${i('git-commit')}<input data-gx-input type="search" placeholder="Guess…" autocomplete="off" autocapitalize="none" spellcheck="false" enterkeyhint="send"></label>
         <button class="gx-btn gx-btn-primary" type="submit">${flavor === 'gitlab' ? 'Submit' : 'Commit'}</button>
+        <div data-gx-region="history"></div>
       </form>
       <div data-gx-region="note"></div>
       <div data-gx-region="flash"></div>
@@ -338,6 +342,20 @@ export function miniHeader(m, st, i, flavor, { close = false } = {}) {
     <button class="gx-icon-btn" data-gx-action="menu" data-menu="settings" title="Settings">${i('gear')}</button>
     ${close ? `<button class="gx-icon-btn" data-gx-action="close" title="Close (Esc)">${i('x')}</button>` : ''}
   </header>`;
+}
+
+/** Pédantix in the mini version: a square button by the guess box, the words already tried shown on hover (the
+ *  text with holes takes all the room; Cémantix's list already is its history). */
+export function miniHistory(m, i) {
+  if (m.kind !== 'pedantix') return '';
+  const rows = [...m.rows].sort((a, b) => b.order - a.order);
+  return `<div class="gx-hist">
+    <button type="button" class="gx-btn gx-hist-btn" data-gx-history title="Words tried" aria-label="Words tried (${rows.length})">${i('history')}</button>
+    <div class="gx-hist-pop"><div class="gx-hist-box">
+      <div class="gx-pop-head">${i('history')} Words tried <span class="gx-counter">${n0(rows.length)}</span></div>
+      ${rows.length ? `<ul class="gx-recent-list">${rows.map(r => recentLine(m, r)).join('')}</ul>` : '<p class="gx-muted">No words yet.</p>'}
+    </div></div>
+  </div>`;
 }
 
 /** What the mini page shows while it connects to the game's tab. */

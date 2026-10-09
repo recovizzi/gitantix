@@ -2,7 +2,8 @@
 
 Clicking the extension icon opens a **small GitHub / GitLab page** of the **game opened last** (content.js stores
 `lastGame` in `chrome.storage.local`), without the page's furniture: compact header (repo switch, day, open the full page,
-friends / team 👥, settings ⚙), close ✕ in the panel, guess box, messages, then only the game — Cémantix's results (emoji, temperature, ‰,
+friends / team 👥, settings ⚙), close ✕ in the panel, guess box, messages, then only the game — Pédantix adds a square history button by the guess box (the words tried, shown on hover
+or keyboard focus) — Cémantix's results (emoji, temperature, ‰,
 proximity bar per line, latest guess on top) or Pédantix's text with holes. **Resizable** with grips in the bottom
 corners (size kept in `chrome.storage.local.miniSize`).
 
