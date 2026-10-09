@@ -1,7 +1,8 @@
 // Smoke test with the REAL built extension (pnpm build first): Chromium (headless "new", which runs extensions)
 // opens both games in a throwaway profile, accepts Google's consent, guesses a word in our box and checks that
 // 1. the game really asked its server (/score) — i.e. the anti-automation check didn't catch us (specs/sites.md);
-// 2. our page shows the guess.
+// 2. our page shows the guess;
+// 3. the guess box keeps the focus (the game focuses its own field after each guess).
 // Needs the network. `pnpm exec playwright install chromium` once.
 import fs from 'node:fs';
 import os from 'node:os';
@@ -33,6 +34,11 @@ for (const [game, word, selector] of [['cemantix', 'chien', '.gx-table tbody tr'
   await box.fill(word); await box.press('Enter');
   await p.waitForTimeout(2000);
   check(scores.length === 1, `${game}: "${word}" sent to the game's server (${scores.length} /score request)`);
+  // the game grabs the focus after a guess: ours must keep it, so the next word is typed without clicking
+  check(await shadow(p, s => s.activeElement?.matches('[data-gx-input]')), `${game}: the guess box keeps the focus`);
+  await p.keyboard.type('maison'); await p.keyboard.press('Enter');
+  await p.waitForTimeout(2000);
+  check(scores.length === 2, `${game}: a second word typed without clicking is sent (${scores.length} /score requests)`);
   check(await shadow(p, `s => s.querySelectorAll(${JSON.stringify(selector)}).length`) > 0, `${game}: the guess is shown`);
   await p.close();
 }

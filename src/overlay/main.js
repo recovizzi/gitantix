@@ -14,7 +14,7 @@ let lastHtml = {};
 const EXPAND_KEY = `gitantix:expanded:${game()}`;
 const st = {
   sort: 'temp', menu: null, expanded: (() => { try { return localStorage.getItem(EXPAND_KEY) === '1'; } catch { return false; } })(),
-  lastSent: null, copied: false, teamBusy: false, sidebarOff: false,
+  lastSent: null, copied: false, teamBusy: false, sidebarOff: false, gameReady: false,
 };
 const recall = { list: [], idx: -1 };   // ↑ / ↓ in the box: previous inputs (like the game's ⤺)
 
@@ -42,6 +42,7 @@ function showStrays() {
 }
 
 export function unmount() {
+  document.removeEventListener('focusin', keepFocus, true);
   showStrays();
   root.classList.remove('gx-disguise', 'gx-pending');
   ui?.host.remove();
@@ -109,7 +110,10 @@ function render() {
   put('win', R.winBanner(m, i));
   put('game', m.kind === 'pedantix' ? R.pedantixGame(m, i) : R.cemantixGame(m, st, i));
   put('side', R.side(m, st, i));
-  ui.input.disabled = !ready();
+  // disabled only until the game is initialised: the game also disables its button while a guess is on its way,
+  // and a disabled field loses the focus (the player would have to click it again after every guess)
+  if (ready()) st.gameReady = true;
+  ui.input.disabled = !st.gameReady;
   document.title = R.title(m, opts.flavor);
 }
 
@@ -133,8 +137,16 @@ function send() {
   ui.input.focus();
 }
 
+/** The game focuses its own (hidden) field after each guess and on every redraw: give the focus back to ours. */
+function keepFocus(e) {
+  if (!ui || e.target?.id !== 'guess' || ui.input.disabled) return;
+  if (st.menu || ui.shadow.querySelector('.gx-modal')) return;   // a menu or a modal of ours is open: leave it
+  ui.input.focus({ preventScroll: true });
+}
+
 function wire() {
   const { shadow, scroller } = ui;
+  document.addEventListener('focusin', keepFocus, true);
   scroller.querySelector('[data-gx-form]').addEventListener('submit', e => { e.preventDefault(); send(); });
   ui.input.addEventListener('keydown', e => {
     e.stopPropagation();   // the game listens to keys on its own field only, but keep the page out of it
