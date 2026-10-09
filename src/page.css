@@ -1,0 +1,8 @@
+/* Gitantix — the game page under the disguise (injected by the manifest). */
+html.gx-pending body, html.gx-disguise body { visibility: hidden !important; }
+/* what sets its own visibility (e.g. Google's floating privacy badge) is hidden too */
+html.gx-pending body > :not(.fc-consent-root), html.gx-disguise body > :not(.fc-consent-root) { visibility: hidden !important; }
+html.gx-disguise, html.gx-disguise body { overflow: hidden !important; }
+/* Google's consent dialog stays usable above the disguise (only the dialog: not its floating privacy badge) */
+html.gx-disguise .fc-consent-root:has(.fc-dialog), html.gx-pending .fc-consent-root:has(.fc-dialog) { visibility: visible !important; z-index: 2147483647 !important; }
+gitantix-overlay { position: fixed; inset: 0; z-index: 2147483646; }

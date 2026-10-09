@@ -4,8 +4,10 @@ Play [Cémantix](https://cemantix.certitudes.org/) and [Pédantix](https://pedan
 GitHub or GitLab project page. A browser extension (Chrome, Edge, Firefox), built on the same principles as its
 sibling project [JetHub](https://github.com/nilscrls/jethub) (JetPunk disguised as GitHub / GitLab).
 
-> Status: **v0.1, base only.** The extension installs, has its settings and knows which game is open, but does not
-> disguise the games yet. See [Roadmap](#roadmap).
+> Status: **milestone 1 in progress.** Both games are drawn as a GitHub or GitLab repository page (light / dark):
+> guess box, Cémantix file list with emojis, temperatures, ‰ and proximity bars, Pédantix README with holes,
+> recent guesses (5, expandable), game switch, teams (create / share / join / leave), in-page settings, the game's
+> rules / FAQ / history in GitHub modals, win banner. See [Roadmap](#roadmap).
 
 ## Goals
 
@@ -56,6 +58,8 @@ pnpm install
 pnpm build          # → dist/extension/ (load it unpacked) and dist/gitantix-extension.zip
 pnpm lint           # web-ext lint, as in CI
 pnpm icons          # re-render src/icons/*.png from src/logo.svg (Playwright Chromium)
+pnpm smoke          # the built extension in headless Chromium: one real guess per game (needs the network)
+node tools/icons-gen.mjs   # regenerate src/overlay/icons.js (Octicons / GitLab icons used by the overlay)
 ```
 
 Chrome / Edge: `chrome://extensions` → Developer mode → **Load unpacked** → `dist/extension`.
@@ -80,10 +84,13 @@ keys from a git-ignored `.env` (see `.env.example`).
 
 | Path | What |
 |---|---|
-| `src/extension/` | content script (game detection, settings), popup (settings) |
+| `src/extension/` | content script (game detection, settings, mounts the overlay), popup (settings) |
+| `src/overlay/` | the disguise: `read.js` (reads the games, drives their controls), `render.js` (GitHub / GitLab page), `main.js` (shadow DOM, events), `overlay.css` (palettes, temperature colours) |
+| `src/page.css` | hides the game page under the disguise (Google's consent dialog stays usable) |
 | `src/logo.svg`, `src/icons/` | logo and its PNG renders |
 | `tools/build.mjs` | builds `dist/extension/` and the zip (esbuild, fflate) |
 | `tools/sign-firefox.mjs` | local Firefox signing |
+| `tools/smoke.mjs` | smoke test with the real extension |
 | `specs/` | how the two games work, the disguise design and decisions |
 | `.github/workflows/` | CI (build + lint on PRs and main), Release |
 

@@ -23,4 +23,7 @@ Studied on 2026-10-09 (Cémantix day nº1682, Pédantix day nº1609).
 4. Content scripts live in an *isolated world*: the games' JS objects and the expando properties they put on DOM
    nodes (`span.score`, `span.word`) are **not visible** to us. DOM, inline styles and `localStorage` are.
 5. Test with the real extension in a real browser profile (JetHub lesson): injected test code has a different stack
-   and a different world.
+   and a different world. `pnpm smoke` does it headless (Chromium `--headless=new` runs extensions). Google's consent
+   dialog covers the page on a fresh profile: tests click `.fc-cta-consent` first.
+6. Google's floating privacy badge forces `visibility` with inline `!important` styles: only an inline `!important`
+   (set by main.js `hideStrays()`, undone on unmount) hides it.

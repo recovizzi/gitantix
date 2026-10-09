@@ -10,7 +10,8 @@
     "build": "node tools/build.mjs",
     "lint": "web-ext lint --self-hosted --source-dir dist/extension",
     "icons": "node tools/icons.mjs",
-    "sign:firefox": "node --env-file-if-exists=.env tools/sign-firefox.mjs"
+    "sign:firefox": "node --env-file-if-exists=.env tools/sign-firefox.mjs",
+    "smoke": "node tools/smoke.mjs"
   },
   "devDependencies": {
     "@gitlab/svgs": "^3.166.0",
