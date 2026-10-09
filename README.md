@@ -4,7 +4,7 @@ Play [Cémantix](https://cemantix.certitudes.org/) and [Pédantix](https://pedan
 GitHub or GitLab project page. A browser extension (Chrome, Edge, Firefox), built on the same principles as its
 sibling project [JetHub](https://github.com/nilscrls/jethub) (JetPunk disguised as GitHub / GitLab).
 
-> Status: **milestones 1 and 2 done, under test.** Both games are drawn as a GitHub or GitLab repository page
+> Status: **v1.0.0 — milestones 1 and 2 done.** Both games are drawn as a GitHub or GitLab repository page
 > (light / dark): guess box, Cémantix file list with emojis, temperatures, ‰ and proximity bars, Pédantix README
 > with holes, recent guesses (5, expandable), game switch, teams (create / share / join / leave), in-page settings,
 > the game's rules / FAQ / history in GitHub modals, win banner. The extension icon opens the **mini version** of the
@@ -50,7 +50,7 @@ we decided and why).
 |---|---|
 | 0.1 | Base extension: build, settings popup, CI, release workflow, specs |
 | 0.2 → 1.0 | Milestone 1: both games disguised as GitHub and GitLab, every feature above |
-| 1.x | Milestone 2: the mini version in the popup (first version done) |
+| 1.0 | Milestone 2: the mini version (floating panel from the toolbar icon, team play, Pédantix history) — released |
 
 ## Install (development)
 
@@ -75,7 +75,7 @@ Same workflow as JetHub (`.github/workflows/release.yml`), run by hand:
 3. Actions → **Release** → Run workflow with the tag.
 
 The release page gets `gitantix-chrome-<version>.crx` (Linux), `gitantix-chrome-<version>.zip` (Load unpacked, any
-OS) and `gitantix-firefox-<version>.xpi` (signed by Mozilla, unlisted channel).
+OS) and `gitantix-firefox-<version>.xpi` (signed by Mozilla, unlisted channel; left out while the Mozilla secrets aren't set).
 
 Repository secrets: `CHROME_CRX_KEY` (PEM private key; it fixes the extension ID, keep it), `MOZILLA_API_KEY` and
 `MOZILLA_API_SECRET` (addons.mozilla.org → Developer Hub → API keys). `pnpm sign:firefox` signs locally with the same

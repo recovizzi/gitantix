@@ -4,7 +4,7 @@
 #   2. git tag v0.2.0 && git push origin v0.2.0
 #   3. run this workflow with tag v0.2.0
 #
-# The release page gets three files:
+# The release page gets three files (two without the Mozilla secrets):
 #   gitantix-chrome-<version>.crx    drag onto chrome://extensions (Linux; Windows and macOS
 #                                  only allow off-store .crx via enterprise policy)
 #   gitantix-chrome-<version>.zip    unzip, then chrome://extensions → Load unpacked (any OS)
@@ -15,7 +15,8 @@
 #
 # Firefox signing uses AMO's "unlisted" channel (self-distribution): Mozilla signs the
 # file without listing it on addons.mozilla.org. Needs the MOZILLA_API_KEY and
-# MOZILLA_API_SECRET repository secrets (addons.mozilla.org → Developer Hub → API keys).
+# MOZILLA_API_SECRET repository secrets (addons.mozilla.org → Developer Hub → API keys); without them the release
+# is published without the Firefox package (with a warning).
 # AMO accepts each version number once, so every run needs a new version.
 name: Release
 
@@ -68,8 +69,8 @@ jobs:
           WEB_EXT_API_SECRET: ${{ secrets.MOZILLA_API_SECRET }}
         run: |
           if [ -z "$WEB_EXT_API_KEY" ] || [ -z "$WEB_EXT_API_SECRET" ]; then
-            echo "::error::MOZILLA_API_KEY and MOZILLA_API_SECRET secrets must be set"
-            exit 1
+            echo "::warning::MOZILLA_API_KEY / MOZILLA_API_SECRET not set: released without the Firefox package"
+            exit 0
           fi
           pnpm exec web-ext sign \
             --source-dir dist/extension-firefox \
@@ -96,8 +97,10 @@ jobs:
         run: |
           mkdir -p release
           cp dist/gitantix-extension.zip release/gitantix-chrome-$VERSION.zip
-          xpi=$(ls signed/*.xpi)
-          cp "$xpi" release/gitantix-firefox-$VERSION.xpi
+          if ls signed/*.xpi >/dev/null 2>&1; then
+            cp "$(ls signed/*.xpi)" release/gitantix-firefox-$VERSION.xpi
+            echo "FIREFOX=1" >> "$GITHUB_ENV"
+          fi
           ls -l release
 
       - uses: actions/upload-artifact@v7
@@ -116,6 +119,8 @@ jobs:
 
           **Chrome / Chromium on Linux:** download \`gitantix-chrome-$VERSION.crx\` and drag it onto \`chrome://extensions\`.
 
-          **Firefox (142+):** download \`gitantix-firefox-$VERSION.xpi\` and open it in Firefox (or drag it onto a Firefox window), then click **Add**. Mozilla signed it, so it stays installed after a restart.
           EOF
+          if [ -n "$FIREFOX" ]; then
+            printf '\n**Firefox (142+):** download `gitantix-firefox-%s.xpi` and open it in Firefox (or drag it onto a Firefox window), then click **Add**. Mozilla signed it, so it stays installed after a restart.\n' "$VERSION" >> notes.md
+          fi
           gh release create "$TAG" release/* --verify-tag --title "$TAG" --notes-file notes.md --generate-notes
