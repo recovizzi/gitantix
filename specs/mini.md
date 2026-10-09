@@ -2,9 +2,24 @@
 
 Clicking the extension icon opens a **small GitHub / GitLab page** of the **game opened last** (content.js stores
 `lastGame` in `chrome.storage.local`), without the page's furniture: compact header (repo switch, day, open the full page,
-friends / team 👥, settings ⚙), drawn as a rounded card with a light shadow in the popup, guess box, messages, then only the game — Cémantix's results (emoji, temperature, ‰,
+friends / team 👥, settings ⚙), close ✕ in the panel, guess box, messages, then only the game — Cémantix's results (emoji, temperature, ‰,
 proximity bar per line, latest guess on top) or Pédantix's text with holes. **Resizable** with grips in the bottom
 corners (size kept in `chrome.storage.local.miniSize`).
+
+## Where it's drawn: a floating panel in the current tab (decided 2026-10-09)
+
+An action popup's frame (square corners, the browser's shadow, opaque background) is drawn by the browser: an
+extension can't round it or put a shadow outside it. So the icon has **no `default_popup`**: `background.js`
+(`action.onClicked`, permissions `activeTab` + `scripting`) injects `panel.js` into the current tab. The panel is a
+fixed card (shadow root, inline `!important` position) with rounded corners and an outer shadow, framing
+`popup.html?embed` (a web-accessible resource: an extension frame keeps the extension APIs, and pages' CSP doesn't
+block it — checked on github.com). Bottom-corner grips resize it (left grip moves the left edge), clamped to the
+viewport without its scrollbar; a second click on the icon, ✕, Esc or "open the full page" closes it (the frame posts
+`{ gitantix: 'close' }`, checked against the frame's window).
+
+Where extensions can't run (edge:// / chrome:// pages, new tab page, stores) the injection fails: the classic popup
+is set for that tab (`action.setPopup`, reset when the tab loads another page) and opened (`action.openPopup`, else a
+small popup window). The classic popup is flush (no inner card).
 
 ## How it plays: through a tab of the game (decided 2026-10-09)
 
@@ -34,8 +49,9 @@ makes the whole manifest invalid: the extension doesn't load). Don't try again.
 
 ### Notes
 
-- Popups can't be resized by the browser itself; their window follows the body size (max 800 × 600), so the grips
-  resize the body.
+- The classic popup can't be resized by the browser itself; its window follows the body size (max 800 × 600), so its
+  grips resize the body.
 - The background tab stays open after the popup closes (reused next time).
 - `pnpm smoke` opens `popup.html` as a page, plays one word through the tab, creates a team from the popup, and
-  reconnects after `chrome.runtime.reload()` (the orphaned-tab case).
+  reconnects after `chrome.runtime.reload()` (the orphaned-tab case), then injects the floating panel into a
+  game tab and checks the game is drawn in it.

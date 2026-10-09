@@ -21,15 +21,18 @@ const manifest = {
   version: pkg.version,
   description: pkg.description,
   icons: { 16: 'icons/16.png', 32: 'icons/32.png', 48: 'icons/48.png', 128: 'icons/128.png' },
-  action: { default_popup: 'popup.html', default_title: 'Gitantix', default_icon: { 16: 'icons/16.png', 32: 'icons/32.png' } },
-  // host permissions: the popup's mini version finds / opens the game's tab and talks to it
-  permissions: ['storage'],
+  // the icon opens the mini version as a floating panel in the current tab (background.js → panel.js), the popup
+  // where extensions can't run; host permissions: the mini version finds / opens the game's tab and talks to it
+  action: { default_title: 'Gitantix', default_icon: { 16: 'icons/16.png', 32: 'icons/32.png' } },
+  background: { service_worker: 'background.js', scripts: ['background.js'] },   // Chrome / Firefox
+  permissions: ['storage', 'activeTab', 'scripting'],
   host_permissions: SITES,
   content_scripts: [{ matches: SITES, css: ['page.css'], js: ['content.js'], run_at: 'document_start' }],
+  web_accessible_resources: [{ resources: ['popup.html'], matches: ['<all_urls>'] }],   // framed by the panel
   browser_specific_settings: { gecko: { id: 'gitantix@recovizzi', strict_min_version: '142.0', data_collection_permissions: { required: ['none'] } } },
 };
 fs.writeFileSync(path.join(ext, 'manifest.json'), JSON.stringify(manifest, null, 2));
-for (const entry of ['content.js', 'popup.js']) buildSync({
+for (const entry of ['content.js', 'popup.js', 'background.js', 'panel.js']) buildSync({
   entryPoints: [path.join(root, 'src/extension', entry)], outfile: path.join(ext, entry),
   bundle: true, format: 'iife', target: ['chrome120', 'firefox121'], loader: { '.css': 'text' }, legalComments: 'inline',
 });

@@ -325,7 +325,7 @@ export function miniShell(flavor) {
   </div>`;
 }
 
-export function miniHeader(m, st, i, flavor) {
+export function miniHeader(m, st, i, flavor, { close = false } = {}) {
   const gl = flavor === 'gitlab';
   return `<header class="gx-mini-head">
     <span class="gx-logo${gl ? ' gx-logo-gl' : ''}">${i(gl ? 'tanuki' : 'mark-github')}</span>
@@ -335,6 +335,7 @@ export function miniHeader(m, st, i, flavor) {
     <button class="gx-icon-btn" data-gx-action="open-tab" title="Open the full page">${i('link-external')}</button>
     <button class="gx-icon-btn${m.team?.in ? ' gx-team-on' : ''}" data-gx-action="menu" data-menu="team" title="${m.team?.in ? `Team: ${m.team.members ?? 1}` : 'Play with friends'}">${i('people')}${m.team?.in ? `<span class="gx-counter">${m.team.members ?? 1}</span>` : ''}</button>
     <button class="gx-icon-btn" data-gx-action="menu" data-menu="settings" title="Settings">${i('gear')}</button>
+    ${close ? `<button class="gx-icon-btn" data-gx-action="close" title="Close (Esc)">${i('x')}</button>` : ''}
   </header>`;
 }
 

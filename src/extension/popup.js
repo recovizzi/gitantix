@@ -5,6 +5,10 @@
 import * as R from '../overlay/render.js';
 import css from '../overlay/overlay.css';
 
+// popup.html?embed: inside the floating panel of a page (panel.js) instead of the toolbar popup
+const EMBED = new URLSearchParams(location.search).has('embed');
+if (EMBED) document.documentElement.classList.add('embed');
+const close = () => EMBED ? parent.postMessage({ gitantix: 'close' }, '*') : window.close();
 const SITE = g => `https://${g}.certitudes.org/`;
 const DEFAULTS = { flavor: 'github', mode: 'auto', disguise: true };
 const MIN = { w: 340, h: 360 }, MAX = { w: 800, h: 600 };
@@ -71,15 +75,6 @@ function build() {
   ui.input.focus();
 }
 
-/** The popup around the card takes the page's palette (light / dark, GitHub / GitLab). */
-function frame() {
-  const cs = getComputedStyle(ui.shadow.querySelector('.gx-scroll'));
-  const dark = matchMedia('(prefers-color-scheme: dark)').matches && opts.mode === 'auto' || opts.mode === 'dark';
-  document.body.style.setProperty('--frame', cs.getPropertyValue(dark ? '--bg-inset' : '--bg-muted'));
-  document.body.style.setProperty('--card-border', cs.getPropertyValue('--border'));
-  document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
-}
-
 function put(name, html) {
   if (!ui.regions[name] || lastHtml[name] === html) return;
   lastHtml[name] = html;
@@ -90,10 +85,9 @@ function render() {
   if (!ui || ui.flavor !== opts.flavor) build();
   ui.host.dataset.flavor = opts.flavor;
   ui.host.dataset.mode = opts.mode;
-  frame();
   const i = R.makeIcon(opts.flavor);
   const m = model ?? { game, other: game === 'cemantix' ? 'pedantix' : 'cemantix', kind: game, rows: [], team: {}, error: '' };
-  put('header', R.miniHeader(m, st, i, opts.flavor));
+  put('header', R.miniHeader(m, st, i, opts.flavor, { close: EMBED }));
   put('menu', R.menu(m, st, i, opts));
   if (status || !model) { put('flash', ''); put('win', ''); put('game', R.miniStatus(status ?? 'Connecting…', i)); return; }
   put('flash', ready ? R.flash(m, st, i) : R.miniStatus('The game is starting…', i));
@@ -123,6 +117,10 @@ function wire() {
     const code = join.querySelector('[data-gx-team-input]').value.trim();
     if (code) teamOp('join', code);
   });
+  shadow.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    if (st.menu) { st.menu = null; render(); input.focus(); } else if (EMBED) close();
+  });
   shadow.addEventListener('change', e => {
     const t = e.target;
     if (t.matches?.('[data-gx-setting]')) chrome.storage.sync.set({ [t.dataset.gxSetting]: t.type === 'checkbox' ? t.checked : t.value });
@@ -148,7 +146,8 @@ function wire() {
       const code = shadow.querySelector('[data-gx-team-code]')?.value;
       if (code) navigator.clipboard?.writeText(code).then(() => { st.copied = true; render(); }).catch(() => {});
     }
-    else if (a === 'open-tab') { if (tabId) chrome.tabs.update(tabId, { active: true }).then(t => chrome.windows.update(t.windowId, { focused: true })).then(() => window.close()); return; }
+    else if (a === 'open-tab') { if (tabId) chrome.tabs.update(tabId, { active: true }).then(t => chrome.windows.update(t.windowId, { focused: true })).then(close); return; }
+    else if (a === 'close') { close(); return; }
     else return;
     e.preventDefault();
     render();
@@ -165,6 +164,7 @@ async function teamOp(op, code) {
 // ------------------------------------------------------------------ size
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 function setSize(w, h) {
+  if (EMBED) return;   // the panel sizes itself
   document.body.style.width = `${clamp(w, MIN.w, MAX.w)}px`;
   document.body.style.height = `${clamp(h, MIN.h, MAX.h)}px`;
 }

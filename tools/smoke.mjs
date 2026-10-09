@@ -69,6 +69,15 @@ for (const [game, word, selector] of [['cemantix', 'chien', '.gx-table tbody tr'
   const mini2 = fn => q.evaluate(`(() => { const s = document.querySelector('.gx-host')?.shadowRoot; return (${fn})(s); })()`);
   for (let k = 0; k < 40 && !(await mini2(s => !!s?.querySelector('.gx-files, .gx-readme'))); k++) await q.waitForTimeout(500);
   check(await mini2(s => !!s?.querySelector('.gx-files, .gx-readme')), 'mini: reconnects to a tab opened before the extension was reloaded');
+  // the floating panel (what the toolbar icon injects, background.js): over the game's own tab here (host permission)
+  await q.evaluate(async () => { const [t] = await chrome.tabs.query({ url: 'https://*.certitudes.org/*' }); await chrome.scripting.executeScript({ target: { tabId: t.id }, files: ['panel.js'] }); });
+  const tabs = ctx.pages().filter(pg => pg.url().includes('certitudes.org'));
+  let framed = false;
+  for (let k = 0; k < 30 && !framed; k++) {
+    await q.waitForTimeout(500);
+    for (const pg of tabs) for (const f of pg.frames()) if (f.url().includes('popup.html?embed')) framed ||= await f.evaluate(() => !!document.querySelector('.gx-host')?.shadowRoot.querySelector('.gx-files, .gx-readme')).catch(() => false);
+  }
+  check(framed, 'panel: the floating mini version is drawn in the tab');
   await q.close();
 }
 await ctx.close();
