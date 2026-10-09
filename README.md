@@ -4,10 +4,11 @@ Play [Cémantix](https://cemantix.certitudes.org/) and [Pédantix](https://pedan
 GitHub or GitLab project page. A browser extension (Chrome, Edge, Firefox), built on the same principles as its
 sibling project [JetHub](https://github.com/nilscrls/jethub) (JetPunk disguised as GitHub / GitLab).
 
-> Status: **milestone 1 in progress.** Both games are drawn as a GitHub or GitLab repository page (light / dark):
-> guess box, Cémantix file list with emojis, temperatures, ‰ and proximity bars, Pédantix README with holes,
-> recent guesses (5, expandable), game switch, teams (create / share / join / leave), in-page settings, the game's
-> rules / FAQ / history in GitHub modals, win banner. See [Roadmap](#roadmap).
+> Status: **milestones 1 and 2 done, under test.** Both games are drawn as a GitHub or GitLab repository page
+> (light / dark): guess box, Cémantix file list with emojis, temperatures, ‰ and proximity bars, Pédantix README
+> with holes, recent guesses (5, expandable), game switch, teams (create / share / join / leave), in-page settings,
+> the game's rules / FAQ / history in GitHub modals, win banner. The popup is the **mini version** of the last game
+> opened (resizable), playing through the game's tab (see `specs/mini.md`).
 
 ## Goals
 
@@ -49,7 +50,7 @@ we decided and why).
 |---|---|
 | 0.1 | Base extension: build, settings popup, CI, release workflow, specs |
 | 0.2 → 1.0 | Milestone 1: both games disguised as GitHub and GitLab, every feature above |
-| 1.x | Milestone 2: the mini version in the popup |
+| 1.x | Milestone 2: the mini version in the popup (first version done) |
 
 ## Install (development)
 
@@ -84,7 +85,7 @@ keys from a git-ignored `.env` (see `.env.example`).
 
 | Path | What |
 |---|---|
-| `src/extension/` | content script (game detection, settings, mounts the overlay), popup (settings) |
+| `src/extension/` | content script (game detection, settings, mounts the overlay, serves the popup), popup (the mini version) |
 | `src/overlay/` | the disguise: `read.js` (reads the games, drives their controls), `render.js` (GitHub / GitLab page), `main.js` (shadow DOM, events), `overlay.css` (palettes, temperature colours) |
 | `src/page.css` | hides the game page under the disguise (Google's consent dialog stays usable) |
 | `src/logo.svg`, `src/icons/` | logo and its PNG renders |

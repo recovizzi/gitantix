@@ -22,16 +22,18 @@ const manifest = {
   description: pkg.description,
   icons: { 16: 'icons/16.png', 32: 'icons/32.png', 48: 'icons/48.png', 128: 'icons/128.png' },
   action: { default_popup: 'popup.html', default_title: 'Gitantix', default_icon: { 16: 'icons/16.png', 32: 'icons/32.png' } },
+  // host permissions: the popup's mini version finds / opens the game's tab and talks to it
   permissions: ['storage'],
+  host_permissions: SITES,
   content_scripts: [{ matches: SITES, css: ['page.css'], js: ['content.js'], run_at: 'document_start' }],
   browser_specific_settings: { gecko: { id: 'gitantix@recovizzi', strict_min_version: '142.0', data_collection_permissions: { required: ['none'] } } },
 };
 fs.writeFileSync(path.join(ext, 'manifest.json'), JSON.stringify(manifest, null, 2));
-buildSync({
-  entryPoints: [path.join(root, 'src/extension/content.js')], outfile: path.join(ext, 'content.js'),
+for (const entry of ['content.js', 'popup.js']) buildSync({
+  entryPoints: [path.join(root, 'src/extension', entry)], outfile: path.join(ext, entry),
   bundle: true, format: 'iife', target: ['chrome120', 'firefox121'], loader: { '.css': 'text' }, legalComments: 'inline',
 });
-for (const f of ['popup.html', 'popup.js']) fs.copyFileSync(path.join(root, 'src/extension', f), path.join(ext, f));
+for (const f of ['popup.html']) fs.copyFileSync(path.join(root, 'src/extension', f), path.join(ext, f));
 fs.copyFileSync(path.join(root, 'src/page.css'), path.join(ext, 'page.css'));
 for (const s of [16, 32, 48, 128]) fs.copyFileSync(path.join(root, 'src/icons', `${s}.png`), path.join(ext, 'icons', `${s}.png`));
 

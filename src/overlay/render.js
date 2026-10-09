@@ -305,3 +305,38 @@ export function dialog(d, i) {
 
 export const title = (m, flavor) => flavor === 'gitlab' ? `${m.game} · ${ORG} · GitLab` : `${ORG}/${m.game}: ${TITLES[m.game]}`;
 export { SORTS };
+
+// ------------------------------------------------------------------ the popup's mini version (specs/mini.md)
+/** Mini page: compact header, guess box, then only the game (Cémantix best results / Pédantix text with holes). */
+export function miniShell(flavor) {
+  const i = makeIcon(flavor);
+  return `<div class="gx gx-mini" data-flavor="${flavor}">
+    <div data-gx-region="header"></div>
+    <div data-gx-region="menu"></div>
+    <div class="gx-mini-body">
+      <form class="gx-guess" data-gx-form autocomplete="off">
+        <label class="gx-guess-field">${i('git-commit')}<input data-gx-input type="search" placeholder="Guess…" autocomplete="off" autocapitalize="none" spellcheck="false" enterkeyhint="send"></label>
+        <button class="gx-btn gx-btn-primary" type="submit">${flavor === 'gitlab' ? 'Submit' : 'Commit'}</button>
+      </form>
+      <div data-gx-region="flash"></div>
+      <div data-gx-region="win"></div>
+      <div data-gx-region="game"></div>
+    </div>
+  </div>`;
+}
+
+export function miniHeader(m, st, i, flavor) {
+  const gl = flavor === 'gitlab';
+  return `<header class="gx-mini-head">
+    <span class="gx-logo${gl ? ' gx-logo-gl' : ''}">${i(gl ? 'tanuki' : 'mark-github')}</span>
+    <nav class="gx-crumbs"><span class="gx-muted">${ORG}</span><span>/</span><button class="gx-repo-switch" data-gx-action="menu" data-menu="switch"><b>${esc(m.game)}</b>${i('triangle-down')}</button></nav>
+    <span class="gx-spacer"></span>
+    ${m.day ? `<span class="gx-muted gx-meta" title="Day">${i('tag')} ${m.day}</span>` : ''}
+    ${m.team?.in ? `<span class="gx-muted gx-meta" title="Team">${i('people')} ${m.team.members ?? 1}</span>` : ''}
+    <button class="gx-icon-btn" data-gx-action="open-tab" title="Open the full page">${i('link-external')}</button>
+    <button class="gx-icon-btn" data-gx-action="menu" data-menu="settings" title="Settings">${i('gear')}</button>
+  </header>`;
+}
+
+/** What the mini page shows while it connects to the game's tab. */
+export const miniStatus = (msg, i) => `<div class="gx-np-empty">${i('sync')} <span>${esc(msg)}</span></div>`;

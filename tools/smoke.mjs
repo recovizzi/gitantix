@@ -7,6 +7,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import { chromium } from 'playwright';
 
 const root = path.resolve(import.meta.dirname, '..');
@@ -40,6 +41,21 @@ for (const [game, word, selector] of [['cemantix', 'chien', '.gx-table tbody tr'
   await p.waitForTimeout(2000);
   check(scores.length === 2, `${game}: a second word typed without clicking is sent (${scores.length} /score requests)`);
   check(await shadow(p, `s => s.querySelectorAll(${JSON.stringify(selector)}).length`) > 0, `${game}: the guess is shown`);
+  await p.close();
+}
+// the popup's mini version (opened as a page here): it plays through the game's tab
+{
+  const id = [...crypto.createHash('sha256').update(ext).digest('hex').slice(0, 32)].map(c => String.fromCharCode(97 + parseInt(c, 16))).join('');   // unpacked id
+  const scores = [];
+  ctx.on('request', r => { if (r.url().includes('/score')) scores.push(r.postData()); });
+  const p = await ctx.newPage();
+  await p.goto(`chrome-extension://${id}/popup.html`);
+  const mini = fn => p.evaluate(`(() => { const s = document.querySelector('.gx-host')?.shadowRoot; return (${fn})(s); })()`);
+  for (let k = 0; k < 40 && !(await mini(s => !!s?.querySelector('.gx-files, .gx-readme'))); k++) await p.waitForTimeout(500);
+  check(await mini(s => !!s?.querySelector('.gx-files, .gx-readme')), 'mini: connected to the game\'s tab');
+  const box = p.locator('.gx-host [data-gx-input]');
+  await box.fill('voiture'); await box.press('Enter'); await p.waitForTimeout(2500);
+  check(scores.includes('word=voiture') || scores.some(s => s.includes('"voiture"')), 'mini: the guess is sent through the tab');
   await p.close();
 }
 await ctx.close();

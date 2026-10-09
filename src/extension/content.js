@@ -1,8 +1,9 @@
 // Gitantix content script (bundled by tools/build.mjs).
 //  - disguise on: the game is hidden and a GitHub / GitLab repository page is drawn on top (src/overlay/)
-//  - remembers the last game opened (the popup's mini version will open it, see specs/mini.md)
+//  - remembers the last game opened and serves the popup's mini version: it plays through this tab (messages:
+//    state / guess / word; "gx-changed" when the game changes). See specs/mini.md.
 import * as overlay from '../overlay/main.js';
-import { GAMES } from '../overlay/read.js';
+import { GAMES, readGame, present, ready, actions } from '../overlay/read.js';
 
 export const DEFAULTS = { flavor: 'github', mode: 'auto', disguise: true };
 const root = document.documentElement;
@@ -52,4 +53,24 @@ if (game) {
       else overlay.update(s);
     });
   });
+}
+
+// ------------------------------------------------------------------ the popup's mini version plays through this tab
+if (game) {
+  chrome.runtime.onMessage.addListener((msg, sender, reply) => {
+    if (msg?.to !== 'game' || msg.game !== game) return;
+    if (!present()) { reply({ present: false }); return; }
+    if (msg.type === 'state') reply({ present: true, ready: ready(), model: readGame() });
+    else if (msg.type === 'guess') reply({ ok: actions.guess(msg.word) });   // the safe submit, see specs/sites.md
+    else if (msg.type === 'word') reply({ ok: actions.word(msg.i) });
+    else if (msg.type === 'toggle') reply({ ok: actions.toggle(msg.id) });
+    else if (msg.type === 'share') reply({ ok: actions.share() });
+  });
+  // tell an open popup that the game changed (nobody listens when it's closed: ignore the error)
+  let timer = null;
+  const changed = () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => chrome.runtime.sendMessage({ type: 'gx-changed', game }).catch(() => {}), 120);
+  };
+  whenReady(() => new MutationObserver(changed).observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['class', 'style', 'disabled'] }));
 }
