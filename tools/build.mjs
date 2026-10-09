@@ -1,5 +1,6 @@
 // Builds the extension from src/:
-//   dist/extension/              MV3 extension (Chrome + Firefox)
+//   dist/extension/              MV3 extension (Chrome, Edge)
+//   dist/extension-firefox/      the same with Firefox's background key (Chromium rejects `background.scripts`)
 //   dist/gitantix-extension.zip  the same, zipped (release asset, Chrome "Load unpacked")
 import fs from 'node:fs';
 import path from 'node:path';
@@ -24,7 +25,7 @@ const manifest = {
   // the icon opens the mini version as a floating panel in the current tab (background.js → panel.js), the popup
   // where extensions can't run; host permissions: the mini version finds / opens the game's tab and talks to it
   action: { default_title: 'Gitantix', default_icon: { 16: 'icons/16.png', 32: 'icons/32.png' } },
-  background: { service_worker: 'background.js', scripts: ['background.js'] },   // Chrome / Firefox
+  background: { service_worker: 'background.js' },
   permissions: ['storage', 'activeTab', 'scripting'],
   host_permissions: SITES,
   content_scripts: [{ matches: SITES, css: ['page.css'], js: ['content.js'], run_at: 'document_start' }],
@@ -40,6 +41,11 @@ for (const f of ['popup.html']) fs.copyFileSync(path.join(root, 'src/extension',
 fs.copyFileSync(path.join(root, 'src/page.css'), path.join(ext, 'page.css'));
 for (const s of [16, 32, 48, 128]) fs.copyFileSync(path.join(root, 'src/icons', `${s}.png`), path.join(ext, 'icons', `${s}.png`));
 
+// Firefox: the background runs as an event page (`scripts`), which Chromium reports as an error
+const ff = path.join(dist, 'extension-firefox');
+fs.cpSync(ext, ff, { recursive: true });
+fs.writeFileSync(path.join(ff, 'manifest.json'), JSON.stringify({ ...manifest, background: { scripts: ['background.js'] } }, null, 2));
+
 // Zipped in JS so the build doesn't need a `zip` binary (missing on stock Ubuntu/WSL and on Windows).
 const files = {};
 for (const f of fs.readdirSync(ext, { recursive: true })) {
@@ -48,4 +54,5 @@ for (const f of fs.readdirSync(ext, { recursive: true })) {
 }
 fs.writeFileSync(path.join(dist, 'gitantix-extension.zip'), zipSync(files, { level: 9 }));
 console.log(`dist/extension/  manifest v${manifest.version}`);
+console.log('dist/extension-firefox/');
 console.log('dist/gitantix-extension.zip');

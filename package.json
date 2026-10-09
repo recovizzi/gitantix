@@ -8,7 +8,7 @@
   "description": "GitHub/GitLab-style disguise of Cémantix and Pédantix — browser extension",
   "scripts": {
     "build": "node tools/build.mjs",
-    "lint": "web-ext lint --self-hosted --source-dir dist/extension",
+    "lint": "web-ext lint --self-hosted --source-dir dist/extension-firefox",
     "icons": "node tools/icons.mjs",
     "sign:firefox": "node --env-file-if-exists=.env tools/sign-firefox.mjs",
     "smoke": "node tools/smoke.mjs"

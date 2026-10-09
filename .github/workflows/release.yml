@@ -72,7 +72,7 @@ jobs:
             exit 1
           fi
           pnpm exec web-ext sign \
-            --source-dir dist/extension \
+            --source-dir dist/extension-firefox \
             --artifacts-dir signed \
             --channel unlisted \
             --upload-source-code "$RUNNER_TEMP/source.zip" \

@@ -17,7 +17,7 @@ if (!process.env.WEB_EXT_API_KEY || !process.env.WEB_EXT_API_SECRET) {
 }
 
 run('node', ['tools/build.mjs']);
-run('pnpm', ['exec', 'web-ext', 'lint', '--self-hosted', '--source-dir', 'dist/extension']);
+run('pnpm', ['exec', 'web-ext', 'lint', '--self-hosted', '--source-dir', 'dist/extension-firefox']);
 
 // content.js is bundled by esbuild, so AMO wants the readable sources too.
 const source = path.join(root, 'dist', 'source.zip');
@@ -25,7 +25,7 @@ run('git', ['archive', '--format=zip', '--output', source, 'HEAD']);
 
 const signed = path.join(root, 'signed');
 fs.rmSync(signed, { recursive: true, force: true });
-run('pnpm', ['exec', 'web-ext', 'sign', '--source-dir', 'dist/extension', '--artifacts-dir', 'signed',
+run('pnpm', ['exec', 'web-ext', 'sign', '--source-dir', 'dist/extension-firefox', '--artifacts-dir', 'signed',
   '--channel', 'unlisted', '--upload-source-code', source, '--approval-timeout', '1800000']);
 
 const xpi = fs.readdirSync(signed).find(f => f.endsWith('.xpi'));

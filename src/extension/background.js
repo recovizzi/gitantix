@@ -4,7 +4,9 @@
 chrome.action.onClicked.addListener(async tab => {
   try {
     await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['panel.js'] });
-  } catch {
+  } catch (e) {
+    // shown by the popup (and kept for diagnosis): why this page can't have the panel
+    await chrome.storage.local.set({ panelError: { at: Date.now(), message: e?.message ?? String(e), url: tab.url ?? '' } });
     await chrome.action.setPopup({ tabId: tab.id, popup: 'popup.html' });   // the next clicks on this page too
     try { await chrome.action.openPopup(); }
     catch { chrome.windows.create({ url: 'popup.html', type: 'popup', width: 436, height: 600 }); }

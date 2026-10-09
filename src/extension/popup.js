@@ -14,10 +14,11 @@ const DEFAULTS = { flavor: 'github', mode: 'auto', disguise: true };
 const MIN = { w: 340, h: 360 }, MAX = { w: 800, h: 600 };
 const st = { sort: 'temp', menu: null, expanded: false, lastSent: null, copied: false, teamBusy: false };
 let opts = DEFAULTS, game = 'cemantix', tabId = null, model = null, ready = false, status = 'Connecting…';
-let ui = null, lastHtml = {};
+let ui = null, lastHtml = {}, note = null;   // note: why the floating panel couldn't open on this page (background.js)
 
 // ------------------------------------------------------------------ the game's tab
 const send = msg => chrome.tabs.sendMessage(tabId, { to: 'game', game, ...msg });
+const post = msg => { send(msg).catch(() => {}); };   // fire and forget (the tab may be gone)
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 /** `send` that gives up after `ms` (a tab asleep may never answer). */
 const ask = (msg, ms = 1500) => Promise.race([send(msg).catch(() => null), sleep(ms).then(() => null)]);
@@ -90,6 +91,7 @@ function render() {
   put('header', R.miniHeader(m, st, i, opts.flavor, { close: EMBED }));
   put('menu', R.menu(m, st, i, opts));
   if (status || !model) { put('flash', ''); put('win', ''); put('game', R.miniStatus(status ?? 'Connecting…', i)); return; }
+  put('note', note ? `<div class="gx-flash gx-flash-warn">${i('alert')}<span>${note}</span></div>` : '');
   put('flash', ready ? R.flash(m, st, i) : R.miniStatus('The game is starting…', i));
   put('win', R.winBanner(m, i));
   put('game', m.kind === 'pedantix' ? R.pedantixGame(m, i) : R.cemantixGame(m, st, i));
@@ -124,12 +126,12 @@ function wire() {
   shadow.addEventListener('change', e => {
     const t = e.target;
     if (t.matches?.('[data-gx-setting]')) chrome.storage.sync.set({ [t.dataset.gxSetting]: t.type === 'checkbox' ? t.checked : t.value });
-    else if (t.matches?.('[data-gx-toggle]')) send({ type: 'toggle', id: t.dataset.gxToggle });
+    else if (t.matches?.('[data-gx-toggle]')) post({ type: 'toggle', id: t.dataset.gxToggle });
   });
   shadow.addEventListener('click', e => {
     if (st.menu && !e.target.closest('[data-gx-stop], [data-gx-action="menu"]')) { st.menu = null; render(); }
     const word = e.target.closest('.gx-w-hidden');
-    if (word) { send({ type: 'word', i: word.dataset.gxWord }); return; }
+    if (word) { post({ type: 'word', i: word.dataset.gxWord }); return; }
     let el = e.target.closest('[data-gx-action]');
     const box = e.target.closest('[data-gx-stop]');
     if (el && box && el.contains(box)) el = null;
@@ -139,14 +141,14 @@ function wire() {
     else if (a === 'menu-close') st.menu = null;
     else if (a === 'switch') { st.menu = null; if (v !== game) { connect(v); return; } }
     else if (a === 'sort') st.sort = v;
-    else if (a === 'share') send({ type: 'share' });
+    else if (a === 'share') post({ type: 'share' });
     else if (a === 'team-create') teamOp('create');
     else if (a === 'team-leave') teamOp('leave');
     else if (a === 'copy-code') {
       const code = shadow.querySelector('[data-gx-team-code]')?.value;
       if (code) navigator.clipboard?.writeText(code).then(() => { st.copied = true; render(); }).catch(() => {});
     }
-    else if (a === 'open-tab') { if (tabId) chrome.tabs.update(tabId, { active: true }).then(t => chrome.windows.update(t.windowId, { focused: true })).then(close); return; }
+    else if (a === 'open-tab') { if (tabId) chrome.tabs.update(tabId, { active: true }).then(t => chrome.windows.update(t.windowId, { focused: true })).then(close, close); return; }
     else if (a === 'close') { close(); return; }
     else return;
     e.preventDefault();
@@ -191,7 +193,12 @@ chrome.storage.onChanged.addListener((changes, area) => {
 });
 chrome.storage.sync.get(DEFAULTS, s => {
   opts = s;
-  chrome.storage.local.get({ lastGame: 'cemantix', miniSize: null }, ({ lastGame, miniSize }) => {
+  chrome.storage.local.get({ lastGame: 'cemantix', miniSize: null, panelError: null }, ({ lastGame, miniSize, panelError }) => {
+    if (!EMBED && panelError && Date.now() - panelError.at < 10000) {
+      const esc = t => String(t).replace(/[&<>"]/g, c => `&#${c.charCodeAt(0)};`);
+      note = `No floating panel on this page (${esc(panelError.message)}): the classic popup instead.`;
+      chrome.storage.local.remove('panelError');
+    }
     if (miniSize) setSize(miniSize.w, miniSize.h);
     render();
     connect(lastGame === 'pedantix' ? 'pedantix' : 'cemantix');

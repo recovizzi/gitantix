@@ -318,6 +318,7 @@ export function miniShell(flavor) {
         <label class="gx-guess-field">${i('git-commit')}<input data-gx-input type="search" placeholder="Guess…" autocomplete="off" autocapitalize="none" spellcheck="false" enterkeyhint="send"></label>
         <button class="gx-btn gx-btn-primary" type="submit">${flavor === 'gitlab' ? 'Submit' : 'Commit'}</button>
       </form>
+      <div data-gx-region="note"></div>
       <div data-gx-region="flash"></div>
       <div data-gx-region="win"></div>
       <div data-gx-region="game"></div>
